@@ -1,0 +1,17 @@
+name: http_1_1_vs_http_2
+description: A simple command-line application.
+version: 1.0.0
+# homepage: https://www.example.com
+
+environment:
+  sdk: ">=2.19.0 <3.0.0"
+
+dependencies:
+  http_parser: ^4.0.2
+  http: ^0.13.5
+  http2: ^2.0.1
+  mime: ^1.0.4
+  path: ^1.8.3
+
+dev_dependencies:
+  lints: ^2.0.1
