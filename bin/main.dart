@@ -10,7 +10,7 @@ HttpBase? _client2;
 Future<void> main(List<String> arguments) async {
   final timeH1 = await executeHttp1(count: 100);
   final timeH2 = await executeHttp2(count: 100);
-  print('Time H1: $timeH1\nTime H2: $timeH2');
+  print('Time H1: $timeH1 ms\nTime H2: $timeH2 ms');
 }
 
 Future<int> executeHttp1({required int count}) async {
