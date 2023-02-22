@@ -8,8 +8,8 @@ HttpBase? _client1;
 HttpBase? _client2;
 
 Future<void> main(List<String> arguments) async {
-  final timeH1 = await executeHttp1(count: 200);
-  final timeH2 = await executeHttp2(count: 200);
+  final timeH1 = await executeHttp1(count: 100);
+  final timeH2 = await executeHttp2(count: 100);
   print('Time H1: $timeH1\nTime H2: $timeH2');
 }
 
@@ -49,7 +49,7 @@ Future<int> watch({
       final response = action();
       reqCount.add(response);
     }
-    print('[$note] $count request has been executed\nProcessing...');
+    print('[$note] $count requests has been executed\nProcessing...');
 
     await Future.wait(reqCount);
 
