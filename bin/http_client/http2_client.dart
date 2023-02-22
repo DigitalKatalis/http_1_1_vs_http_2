@@ -107,66 +107,81 @@ class Http2Client implements HttpBase {
     BaseRequest request, {
     Completer<Stream<double>>? uploadStreamCompleter,
   }) async {
-    String requestUrlOrHost(String Function(Uri) fn) =>
-        fn(request.url).isEmpty ? fn(_host) : fn(request.url);
-    final reqStream = request.finalize();
-    final headers = <String, String>{
-      ':method': request.method,
-      ':path': request.url.path,
-      ':scheme': requestUrlOrHost((url) => url.scheme),
-      ':authority': requestUrlOrHost((url) => url.authority),
-      ...request.headers,
-      'traceparent': '00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01',
-      'content-length': request.contentLength.toString(),
-    };
+    final StreamController<double> sc = StreamController<double>();
+    try {
+      String requestUrlOrHost(String Function(Uri) fn) =>
+          fn(request.url).isEmpty ? fn(_host) : fn(request.url);
+      final reqStream = request.finalize();
+      final headers = <String, String>{
+        ':method': request.method,
+        ':path': request.url.path,
+        ':scheme': requestUrlOrHost((url) => url.scheme),
+        ':authority': requestUrlOrHost((url) => url.authority),
+        ...request.headers,
+        'content-length': request.contentLength.toString(),
+      };
 
-    final h2Headers = headers.entries
-        .map((h) => Header.ascii(h.key.toLowerCase(), h.value))
-        .toList();
+      final h2Headers = headers.entries
+          .map((h) => Header.ascii(h.key.toLowerCase(), h.value))
+          .toList();
 
-    final connection = await _connection.future;
-    final h2Request = connection.makeRequest(h2Headers);
+      final connection = await _connection.future;
+      final h2Request = connection.makeRequest(h2Headers);
 
-    final requestStream = reqStream.listen(
-      (bytes) {
-        h2Request.sendData(bytes);
-      },
-      onDone: () {
-        h2Request.outgoingMessages.close();
-      },
-      onError: (_, __) {
-        h2Request.outgoingMessages.close();
-      },
-      cancelOnError: true,
-    );
+      int uploadedDataCount = 0;
+      uploadStreamCompleter?.complete(sc.stream);
+      final requestStream = reqStream.listen(
+        (bytes) {
+          h2Request.sendData(bytes);
+          uploadedDataCount += bytes.length;
+          final percentage = uploadedDataCount / request.contentLength!;
+          sc.add(
+            percentage.isNaN ? 99 : percentage,
+          );
+        },
+        onDone: () {
+          h2Request.outgoingMessages.close();
+        },
+        onError: (_, __) {
+          h2Request.outgoingMessages.close();
+          sc.addError(_, __);
+        },
+        cancelOnError: true,
+      );
 
-    await h2Request.outgoingMessages.done;
-    await requestStream.cancel();
+      await h2Request.outgoingMessages.done;
+      await requestStream.cancel();
 
-    final responseHeader = <String, String>{};
+      final responseHeader = <String, String>{};
 
-    final incomings = await h2Request.incomingMessages.toList();
-    final responseData = <List<int>>[];
-    for (final message in incomings) {
-      if (message is HeadersStreamMessage) {
-        for (final header in message.headers) {
-          final name = utf8.decode(header.name);
-          final value = utf8.decode(header.value);
-          responseHeader[name] = value;
+      final incomings = await h2Request.incomingMessages.toList();
+      final responseData = <List<int>>[];
+      for (final message in incomings) {
+        if (message is HeadersStreamMessage) {
+          for (final header in message.headers) {
+            final name = utf8.decode(header.name);
+            final value = utf8.decode(header.value);
+            responseHeader[name] = value;
+          }
+        } else if (message is DataStreamMessage) {
+          responseData.add(message.bytes);
         }
-      } else if (message is DataStreamMessage) {
-        responseData.add(message.bytes);
+        if (message.endStream) {}
       }
-      if (message.endStream) {}
-    }
 
-    return StreamedResponse(
-      // responseBodyStream,
-      Stream.fromIterable(responseData),
-      int.parse(responseHeader[':status']!),
-      request: request,
-      headers: responseHeader,
-    );
+      return StreamedResponse(
+        Stream.fromIterable(responseData),
+        int.parse(responseHeader[':status']!),
+        request: request,
+        headers: responseHeader,
+      );
+    } on HttpException catch (error) {
+      throw ClientException(error.message, error.uri);
+    } finally {
+      if (!sc.isClosed) {
+        unawaited(sc.close());
+      }
+    }
   }
 
   Future<ClientTransportConnection> init() async {
