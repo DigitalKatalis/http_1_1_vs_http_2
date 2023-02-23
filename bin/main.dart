@@ -8,8 +8,10 @@ HttpBase? _client1;
 HttpBase? _client2;
 
 Future<void> main(List<String> arguments) async {
-  final timeH1 = await executeHttp1(count: 100);
-  final timeH2 = await executeHttp2(count: 100);
+  //create [count] requests without waiting the response 
+  final count = 100;
+  final timeH1 = await executeHttp1(count: count);
+  final timeH2 = await executeHttp2(count: count);
   print('Time H1: $timeH1 ms\nTime H2: $timeH2 ms');
 }
 
