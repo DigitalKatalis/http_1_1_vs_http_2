@@ -4,8 +4,8 @@ import 'http_client/http1_client.dart';
 import 'http_client/http2_client.dart';
 import 'http_client/http_base.dart';
 
-HttpBase? _client1;
-HttpBase? _client2;
+HttpBase _client1 = Http1Client();
+HttpBase _client2 = Http2Client(Uri.parse('https://api.smallog.tech'));
 
 Future<void> main(List<String> arguments) async {
   //create [count] requests without waiting each response
@@ -13,13 +13,12 @@ Future<void> main(List<String> arguments) async {
   final timeH1 = await executeHttp1(count: totalRequest);
   final timeH2 = await executeHttp2(count: totalRequest);
   print('Time H1: $timeH1 ms\nTime H2: $timeH2 ms');
-  print('Different in percentage: ${(timeH1 - timeH2) / timeH1 * 100}%');
+  print('Difference in percent: ${(timeH1 - timeH2) / timeH1 * 100}%');
 }
 
 Future<int> executeHttp1({required int count}) async {
   Future<Response> execute() async {
-    _client1 ??= Http1Client();
-    return await _client1!.get(Uri.parse(
+    return await _client1.get(Uri.parse(
       'https://api.smallog.tech/card-manager/v2/cards/f2dcf489-0d5b-4da9-96fc-cb39ecc9b5b1',
     ));
   }
@@ -29,8 +28,7 @@ Future<int> executeHttp1({required int count}) async {
 
 Future<int> executeHttp2({required int count}) async {
   Future<Response> execute() async {
-    _client2 ??= Http2Client(Uri.parse('https://api.smallog.tech'));
-    return _client2!.get(Uri.parse(
+    return _client2.get(Uri.parse(
       '/card-manager/v2/cards/f2dcf489-0d5b-4da9-96fc-cb39ecc9b5b1',
     ));
   }
