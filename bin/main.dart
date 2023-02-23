@@ -12,8 +12,8 @@ Future<void> main(List<String> arguments) async {
   final totalRequest = 50;
   final timeH1 = await executeHttp1(count: totalRequest);
   final timeH2 = await executeHttp2(count: totalRequest);
-  print('Time H1: $timeH1 ms\nTime H2: $timeH2 ms');
-  print('Difference in percent: ${(timeH1 - timeH2) / timeH1 * 100}%');
+  print('Time Http/1: $timeH1 ms\nTime Http/2: $timeH2 ms');  
+  print('Difference in percent: ${(timeH1 - timeH2) / timeH1 * 100} %');
 }
 
 Future<int> executeHttp1({required int count}) async {
