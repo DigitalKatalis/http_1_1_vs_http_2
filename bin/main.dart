@@ -8,11 +8,12 @@ HttpBase? _client1;
 HttpBase? _client2;
 
 Future<void> main(List<String> arguments) async {
-  //create [count] requests without waiting the response 
-  final count = 100;
-  final timeH1 = await executeHttp1(count: count);
-  final timeH2 = await executeHttp2(count: count);
+  //create [count] requests without waiting each response
+  final totalRequest = 50;
+  final timeH1 = await executeHttp1(count: totalRequest);
+  final timeH2 = await executeHttp2(count: totalRequest);
   print('Time H1: $timeH1 ms\nTime H2: $timeH2 ms');
+  print('Different in percentage: ${(timeH1 - timeH2) / timeH1 * 100}%');
 }
 
 Future<int> executeHttp1({required int count}) async {
